@@ -1,28 +1,33 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import StatsPanel from '@/components/StatsPanel';
+import AchievementGrid from '@/components/AchievementGrid';
+import Leaderboard from '@/components/Leaderboard';
+import { loadBest, loadLeaderboard, loadProfile, resetAllData, emptyProfile } from '@/lib/storage';
 
 export const Route = createFileRoute('/stats')({
   component: StatsPage,
 });
 
 function StatsPage() {
+  const [profile, setProfile] = useState(() => loadProfile());
+  const [best, setBest] = useState(() => loadBest());
+  const [entries, setEntries] = useState(() => loadLeaderboard());
+
+  const reset = () => {
+    resetAllData();
+    setProfile(emptyProfile);
+    setBest(0);
+    setEntries([]);
+  };
+
   return (
-    <div className="py-6">
-      <h1 className="mb-4 text-2xl font-black uppercase tracking-[0.2em]">Stats</h1>
-      {/* StatsPanel + AchievementGrid placeholder */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="h-40 rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5">
-          <div className="mb-3 h-3 w-24 rounded bg-white/15" />
-          <div className="mb-2 h-6 w-16 rounded bg-white/25" />
-          <div className="h-3 w-3/4 rounded bg-white/10" />
-        </div>
-        <div className="h-40 rounded-2xl border border-[var(--panel-border)] bg-[var(--panel)] p-5">
-          <div className="mb-3 h-3 w-28 rounded bg-white/15" />
-          <div className="grid grid-cols-3 gap-2">
-            <div className="h-14 rounded-xl bg-white/10" />
-            <div className="h-14 rounded-xl bg-white/10" />
-            <div className="h-14 rounded-xl bg-white/10" />
-          </div>
-        </div>
+    <div className="space-y-4 py-2">
+      <h1 className="text-xl font-black uppercase tracking-[0.2em]">Your progress</h1>
+      <StatsPanel profile={profile} best={best} onReset={reset} />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <AchievementGrid unlocked={profile.unlocked} />
+        <Leaderboard entries={entries} currentScore={-1} newBest={false} />
       </div>
     </div>
   );

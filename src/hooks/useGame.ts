@@ -95,6 +95,11 @@ export function useGame(): UseGame {
     () => store.loadDailyDone() === todayKey(),
   );
 
+  const profileRef = useRef(profile);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
   const factsRef = useRef({ usedUndo: false, usedPowerUps: false, bestCombo: 0 });
   const milestoneRef = useRef(0);
   const endedRef = useRef(false);
@@ -141,15 +146,15 @@ export function useGame(): UseGame {
 
   const grantAchievements = useCallback(
     (nextBoard: BoardState, runEnded: boolean) => {
-      setProfile((prev) => {
-        const earned = checkAchievements(nextBoard, config, prev, factsRef.current, runEnded);
-        if (earned.length === 0) return prev;
-        const updated = { ...prev, unlocked: [...prev.unlocked, ...earned] };
-        store.saveProfile(updated);
-        setToasts((t) => [...t, ...earned]);
-        play('unlock');
-        return updated;
-      });
+      const prev = profileRef.current;
+      const earned = checkAchievements(nextBoard, config, prev, factsRef.current, runEnded);
+      if (earned.length === 0) return;
+      const updated = { ...prev, unlocked: [...prev.unlocked, ...earned] };
+      profileRef.current = updated;
+      store.saveProfile(updated);
+      setProfile(updated);
+      setToasts((t) => [...t, ...earned]);
+      play('unlock');
     },
     [config],
   );
@@ -168,33 +173,33 @@ export function useGame(): UseGame {
       };
       setLeaderboard(store.addLeaderboardEntry(entry));
 
-      setProfile((prev) => {
-        const isDaily = config.mode === 'daily';
-        const today = todayKey();
-        let currentStreak = prev.currentStreak;
-        if (isDaily && prev.lastDailyDate !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yKey = todayKey(yesterday);
-          currentStreak = prev.lastDailyDate === yKey ? prev.currentStreak + 1 : 1;
-        }
-        const updated = {
-          ...prev,
-          gamesPlayed: prev.gamesPlayed + 1,
-          wins: prev.wins + (finished.status === 'won' ? 1 : 0),
-          bestScore: {
-            ...prev.bestScore,
-            [config.mode]: Math.max(prev.bestScore[config.mode] ?? 0, finished.score),
-          },
-          highestTileEver: Math.max(prev.highestTileEver, finished.highestTile),
-          totalMerges: prev.totalMerges + finished.merges,
-          currentStreak,
-          longestStreak: Math.max(prev.longestStreak, currentStreak),
-          lastDailyDate: isDaily ? today : prev.lastDailyDate,
-        };
-        store.saveProfile(updated);
-        return updated;
-      });
+      const prev = profileRef.current;
+      const isDaily = config.mode === 'daily';
+      const today = todayKey();
+      let currentStreak = prev.currentStreak;
+      if (isDaily && prev.lastDailyDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yKey = todayKey(yesterday);
+        currentStreak = prev.lastDailyDate === yKey ? prev.currentStreak + 1 : 1;
+      }
+      const updated = {
+        ...prev,
+        gamesPlayed: prev.gamesPlayed + 1,
+        wins: prev.wins + (finished.status === 'won' ? 1 : 0),
+        bestScore: {
+          ...prev.bestScore,
+          [config.mode]: Math.max(prev.bestScore[config.mode] ?? 0, finished.score),
+        },
+        highestTileEver: Math.max(prev.highestTileEver, finished.highestTile),
+        totalMerges: prev.totalMerges + finished.merges,
+        currentStreak,
+        longestStreak: Math.max(prev.longestStreak, currentStreak),
+        lastDailyDate: isDaily ? today : prev.lastDailyDate,
+      };
+      profileRef.current = updated;
+      store.saveProfile(updated);
+      setProfile(updated);
 
       if (config.mode === 'daily') {
         store.saveDailyDone(todayKey());
@@ -277,15 +282,13 @@ export function useGame(): UseGame {
   );
 
   const undo = useCallback(() => {
-    setHistory((h) => {
-      if (h.length === 0) return h;
-      const prev = h[h.length - 1];
-      factsRef.current.usedUndo = true;
-      endedRef.current = false;
-      setBoard(prev);
-      return h.slice(0, -1);
-    });
-  }, []);
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    factsRef.current.usedUndo = true;
+    endedRef.current = false;
+    setBoard(prev);
+    setHistory(history.slice(0, -1));
+  }, [history]);
 
   const keepGoing = useCallback(() => {
     setBoard((b) => ({ ...b, status: 'playing', keptGoing: true }));
@@ -385,6 +388,7 @@ export function useGame(): UseGame {
     store.resetAllData();
     setBest(0);
     setLeaderboard([]);
+    profileRef.current = store.emptyProfile;
     setProfile(store.emptyProfile);
     setDailyDoneToday(false);
     startRun(config.mode, config.size, config.difficulty);

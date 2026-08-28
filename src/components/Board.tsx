@@ -1,7 +1,12 @@
+import { useEffect, useRef, useState } from 'react';
 import type { BoardState, PowerUpKind } from '@/types/game';
 import Tile from '@/components/Tile';
 
 const GAP_PCT = 2.2;
+const SPARKS = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i / 12) * Math.PI * 2;
+  return { dx: Math.cos(angle) * 90, dy: Math.sin(angle) * 90 };
+});
 
 interface Props {
   board: BoardState;
@@ -30,6 +35,19 @@ export default function Board({
   const selectable = armed === 'delete' || armed === 'swap';
   const gameOver = board.status === 'lost';
   const won = board.status === 'won';
+
+  const prevHighest = useRef(board.highestTile);
+  const [burst, setBurst] = useState(false);
+
+  useEffect(() => {
+    if (board.highestTile > prevHighest.current && board.highestTile >= 128) {
+      setBurst(true);
+      const id = window.setTimeout(() => setBurst(false), 620);
+      prevHighest.current = board.highestTile;
+      return () => window.clearTimeout(id);
+    }
+    prevHighest.current = board.highestTile;
+  }, [board.highestTile]);
 
   return (
     <div className={`relative w-full ${shake ? 'anim-shake' : ''}`}>
@@ -75,6 +93,24 @@ export default function Board({
             onSelect={onTapTile}
           />
         ))}
+
+        {burst && (
+          <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+            {SPARKS.map((s, i) => (
+              <span
+                key={i}
+                className="absolute h-2 w-2 rounded-full"
+                style={{
+                  background: i % 2 ? 'var(--accent)' : 'var(--accent-2)',
+                  boxShadow: '0 0 12px currentColor',
+                  animation: 'sparkle-out 600ms ease-out forwards',
+                  ['--dx' as string]: `${s.dx}px`,
+                  ['--dy' as string]: `${s.dy}px`,
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {(gameOver || won) && (
           <div

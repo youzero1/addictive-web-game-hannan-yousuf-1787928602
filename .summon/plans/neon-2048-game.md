@@ -1,5 +1,5 @@
 ---
-status: pending
+status: implemented
 title: Neon 2048 — Addictive Tile-Merging Web Game
 ---
 
