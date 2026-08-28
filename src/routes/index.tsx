@@ -5,6 +5,9 @@ import ScorePanel from '@/components/ScorePanel';
 import ModeSelect from '@/components/ModeSelect';
 import PowerUpBar from '@/components/PowerUpBar';
 import Leaderboard from '@/components/Leaderboard';
+import HowToPlay from '@/components/HowToPlay';
+import AchievementToast from '@/components/AchievementToast';
+import ShareCard from '@/components/ShareCard';
 import { useGame } from '@/hooks/useGame';
 import { useSwipeAndKeys } from '@/hooks/useSwipeAndKeys';
 
@@ -73,19 +76,34 @@ function GamePage() {
           />
         </div>
 
-        <p className="text-center text-xs text-[var(--muted)]">
-          Use the arrow keys or swipe to slide the tiles. Merge matching numbers to reach{' '}
-          {game.target}.
+        <HowToPlay
+          target={game.target}
+          muted={game.muted}
+          onToggleMute={() => game.setMuted(!game.muted)}
+        />
+
+        <p className="sr-only" aria-live="polite">
+          Score {game.board.score}. Highest tile {game.board.highestTile}.
         </p>
       </div>
 
       <aside className="flex flex-col gap-4">
+        {(game.board.status === 'lost' || game.board.status === 'won') && (
+          <ShareCard
+            board={game.board}
+            config={game.config}
+            badgeCount={game.profile.unlocked.length}
+          />
+        )}
+
         <Leaderboard
           entries={game.leaderboard}
           currentScore={game.board.score}
           newBest={game.newBest}
         />
       </aside>
+
+      <AchievementToast ids={game.toasts} onDismiss={game.dismissToast} />
     </div>
   );
 }

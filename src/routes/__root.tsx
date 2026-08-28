@@ -1,4 +1,5 @@
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -45,21 +46,24 @@ function RootLayout() {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-1">
-            <Link to="/" className={navLink} activeProps={{ className: `${navLink} !text-[var(--text)]` }}>
-              Play
-            </Link>
-            <Link to="/stats" className={navLink} activeProps={{ className: `${navLink} !text-[var(--text)]` }}>
-              Stats
-            </Link>
-            <Link
-              to="/how-to-play"
-              className={navLink}
-              activeProps={{ className: `${navLink} !text-[var(--text)]` }}
-            >
-              Rules
-            </Link>
-          </nav>
+          <div className="flex items-center gap-2">
+            <nav className="flex items-center gap-1">
+              <Link to="/" className={navLink} activeProps={{ className: `${navLink} !text-[var(--text)]` }}>
+                Play
+              </Link>
+              <Link to="/stats" className={navLink} activeProps={{ className: `${navLink} !text-[var(--text)]` }}>
+                Stats
+              </Link>
+              <Link
+                to="/how-to-play"
+                className={navLink}
+                activeProps={{ className: `${navLink} !text-[var(--text)]` }}
+              >
+                Rules
+              </Link>
+            </nav>
+            <ThemeSwitcher />
+          </div>
         </header>
 
         <main className="flex-1">
